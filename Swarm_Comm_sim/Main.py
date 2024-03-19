@@ -8,7 +8,7 @@ import Cox_Point as cp
 import Sinr
 
 
-r = 1
+r = 2
 T = 300
 x_0 = 0
 y_0 = 0
