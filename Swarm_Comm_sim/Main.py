@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
 import Cox_Point as cp
-import Sinr
+import SINR_Functions as Sinr
 
 
 r = 2
