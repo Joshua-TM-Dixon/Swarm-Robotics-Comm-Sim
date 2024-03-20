@@ -40,7 +40,6 @@ def Calc_Point_Pos(x_0, y_0, p, q, theta):
 def Cox_Point_Process(r, x_0, y_0, lambda_0, mu_0):
     lines = []
     points = []
-
     n_lines = np.random.poisson(2 * np.pi * r * lambda_0)
     for i in range(n_lines):
         p, q, theta = Gen_Line_Par(r)
