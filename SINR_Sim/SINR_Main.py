@@ -19,13 +19,10 @@ n_tx_intf_range = range(0, 10, 2)  # Range in the number of interference transmi
 d_tx_tgt_range = np.linspace(0.1, 100, 50)  # range of target transmitter distances
 
 # 
-def gen_rand_points_in_circle(n_points, r_circle):
-    if isinstance(r_circle, (int, float)) == False or r_circle < 0:
-        print("Error: calc_path_loss: All parameters must be real numbers greater than 0")
-    else:
-        theta = 2 * np.pi * np.random.uniform(0, 1, n_points)
-        d = r_circle * np.sqrt(np.random.uniform(0, 1, n_points))
-        return d, theta
+def gen_rand_point_on_circle(r_circle):
+    theta = 2 * np.pi * np.random.uniform(0, 1)
+    d = r_circle * np.sqrt(np.random.uniform(0, 1))
+    return d, theta
 
 
 # Plots generic figure containing 1 or more scatter graphs
@@ -72,12 +69,14 @@ for n_tx_intf in n_tx_intf_range:
         count = 0
         for i in range (n_sims):
             L_tx_tgt = Sinr.calc_path_loss(f, d_tx_tgt, 2)
-            F_tx_tgt = Sinr.gen_fading_var('F', 0, 1, 1)
+            F_tx_tgt = Sinr.gen_fading_var('F', 0, 1)
             P_rx_tgt = Sinr.calc_rx_power(F_tx_tgt, P_tx, G, G, L_tx_tgt)
-            d_tx_intf, theta_tx_intf = gen_rand_points_in_circle(n_tx_intf, r_env)
-            L_tx_inft = Sinr.calc_path_loss(f, d_tx_intf, 2)
-            F_tx_intf = Sinr.gen_fading_var('F', 0, 1, n_tx_intf)
-            P_rx_intf = Sinr.calc_rx_power(F_tx_intf, P_tx, G, G, L_tx_inft)
+            P_rx_intf = []
+            for j in range(n_tx_intf):
+                d_tx_intf, theta_tx_intf = gen_rand_point_on_circle(r_env)
+                L_tx_inft = Sinr.calc_path_loss(f, d_tx_intf, 2)
+                F_tx_intf = Sinr.gen_fading_var('F', 0, 1)
+                P_rx_intf.append(Sinr.calc_rx_power(F_tx_intf, P_tx, G, G, L_tx_inft))
             sinr = Sinr.calc_sinr(P_rx_tgt, P_rx_intf, N)
             if sinr > sinr_threshold:
                 count += 1
@@ -85,8 +84,8 @@ for n_tx_intf in n_tx_intf_range:
 
 # Graph
 plot_data('n', n_tx_intf_range, ' ',
-        'Desired Transmitter Distance',  d_tx_intf, 'm',
-        'Coverage Probability', coverage_Prob, ' ')       
+        'Desired Transmitter Distance',  d_tx_tgt_range, 'm',
+        'Coverage Probability', coverage_Prob, ' ')     
             
             
            
