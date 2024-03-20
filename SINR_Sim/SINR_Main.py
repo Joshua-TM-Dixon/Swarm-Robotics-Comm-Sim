@@ -1,40 +1,55 @@
 # Libraries
 import numpy as np
 import plotly.graph_objects as go
-import SINR_Functions as Sinr
+import Sinr_Functions as Sinr
 
-# Functions
+# Simulation variables
+coverage_Prob = []
+n_sims = 1000
 
-    # Generates n random node positions on a circle with radius r and returns
-    # a list of distances and angles for all nodes
-def Gen_node_pos(n, r):
-    theta = 2 * np.pi * np.random.uniform(0, 1, n)
-    d = r * np.sqrt(np.random.uniform(0, 1, n))
-    return d, theta
+B = 10 ** 6  # Bandwidth in Hertz (Hz)     
+f = 2.4835 * 10 ** 9  # frequency in Hertz (Hz)   
+P_tx = 10 ** (-5)  # transmit power in Watts (W)      
+G = 10 ** (-1)  # Antenna gain        
+sinr_threshold = 1                 
+
+r_env = 100  # Environment radius Meters (m)                               
+T_env = 300  # Environment temperature in Kelvin (K)
+n_tx_intf_range = range(0, 10, 2)  # Range in the number of interference transmitters
+d_tx_tgt_range = np.linspace(0.1, 100, 50)  # range of target transmitter distances
+
+# 
+def gen_rand_points_in_circle(n_points, r_circle):
+    if isinstance(r_circle, (int, float)) == False or r_circle < 0:
+        print("Error: calc_path_loss: All parameters must be real numbers greater than 0")
+    else:
+        theta = 2 * np.pi * np.random.uniform(0, 1, n_points)
+        d = r_circle * np.sqrt(np.random.uniform(0, 1, n_points))
+        return d, theta
 
 
-    # Plots generic figure containing 1 or more scatter graphs
-def Plot_Data(t_name, t_data, t_dim, x_name, x_data, x_dim, y_name, y_data, y_dim):
+# Plots generic figure containing 1 or more scatter graphs
+def plot_data(t_name, t_data, t_units, x_axis_name, x_data, x_units, y_axis_name, y_data, y_units):
     fig = go.Figure()
     
     for i in range(len(t_data)):
         fig.add_trace(go.Scatter(x = list(x_data),
                                  y = [y_data[j + i * len(x_data)] for j in range(len(x_data))], 
                                  mode = 'lines+markers',
-                                 name = f'{t_name} = {t_data[i]} {t_dim}'))
+                                 name = f'{t_name} = {t_data[i]} {t_units}'))
         
     fig.update_layout(
         title = dict(
-            text = f'Graph of {y_name} Against {x_name}',
+            text = f'Graph of {y_units} Against {x_axis_name}',
             font = dict(family = 'Arial', size = 26, color = 'black')),
         xaxis = dict(
             title = dict(
-                text = f'{x_name} ({x_dim})',
+                text = f'{x_axis_name} ({x_units})',
                 font = dict(family = 'Arial', size = 22, color = 'black')),
             tickfont = dict(family = 'Arial', size = 18, color = 'black')),
         yaxis = dict(
             title = dict(
-                text = f'{y_name} ({y_dim})',
+                text = f'{y_axis_name} ({y_units})',
                 font = dict(family = 'Arial', size = 22, color = 'black')),
             tickfont = dict(family = 'Arial', size = 18, color = 'black')),
         legend = dict(
@@ -47,50 +62,31 @@ def Plot_Data(t_name, t_data, t_dim, x_name, x_data, x_dim, y_name, y_data, y_di
         height = 750)
     
     fig.show()
+  
     
     # Runs Monte-Carlo simulation using communication parameters
-def Monte_Carlo():
-    
-    # Simulation variables
-    pr = []        # Coverage probability
-    sim = 10000    # Number of simulations
-    
-    # Signal variables
-    B = 10 ** 6             # Bandwidth (Hz)
-    f = 2.4835 * 10 ** 9    # Frequency (Hz)
-    P_t = 10 ** (-5)        # Transmitter power (W)
-    G = 10 ** (-1)          # Antenna gain
-    thr = 1                 # SINR threshold
-    
-    # Environment variables
-    r = 10                                  # Radius of circle (m)
-    T = 300                                 # temperature (K)
-    n_range = range(3, 12, 2)               # range of number of interference nodes
-    d_ts_range = np.linspace(0.1, r, 50)    # range of desired transmitter distances from receiver (m)
-    
-    # Simulation
-    N = Sinr.Calc_N(B, T)
-    for n in n_range:
-        F = Sinr.Gen_F('F', 0, 1)
-        for d_ts in d_ts_range:
-            c = 0
-            L_ts = Sinr.Calc_L(f, d_ts, 2)
-            P_rs = Sinr.Calc_P_r(F, P_t, G, G, L_ts)
-            for j in range (sim):
-                d_ti, theta_ti = Gen_node_pos(n, r)
-                L_ti = Sinr.Calc_L(f, d_ti, 2)
-                P_ri = Sinr.Calc_P_r(F, P_t, G, G, L_ti)
-                sinr = Sinr.Calc_SINR(P_rs, P_ri, N)
-                if sinr > thr:
-                    c += 1
-            pr.append(c / sim)
+# Simulation
+N = Sinr.calc_noise_power(B, T_env)
+for n_tx_intf in n_tx_intf_range:
+    for d_tx_tgt in d_tx_tgt_range:
+        count = 0
+        for i in range (n_sims):
+            L_tx_tgt = Sinr.calc_path_loss(f, d_tx_tgt, 2)
+            F_tx_tgt = Sinr.gen_fading_var('F', 0, 1, 1)
+            P_rx_tgt = Sinr.calc_rx_power(F_tx_tgt, P_tx, G, G, L_tx_tgt)
+            d_tx_intf, theta_tx_intf = gen_rand_points_in_circle(n_tx_intf, r_env)
+            L_tx_inft = Sinr.calc_path_loss(f, d_tx_intf, 2)
+            F_tx_intf = Sinr.gen_fading_var('F', 0, 1, n_tx_intf)
+            P_rx_intf = Sinr.calc_rx_power(F_tx_intf, P_tx, G, G, L_tx_inft)
+            sinr = Sinr.calc_sinr(P_rx_tgt, P_rx_intf, N)
+            if sinr > sinr_threshold:
+                count += 1
+        coverage_Prob.append(count / n_sims)
 
-    # Graph
-    Plot_Data('n', n_range, ' ',
-          'Desired Transmitter Distance',  d_ts_range, 'm',
-          'Coverage Probability', pr, ' ')  
-
-Monte_Carlo()       
+# Graph
+plot_data('n', n_tx_intf_range, ' ',
+        'Desired Transmitter Distance',  d_tx_intf, 'm',
+        'Coverage Probability', coverage_Prob, ' ')       
             
             
            
