@@ -5,20 +5,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
 import Cox_Point as cp
-import SINR_Functions as Sinr
+import Sinr_Functions as Sinr
 
 
-r = 2
+r = 10
 T = 300
 x_0 = 0
 y_0 = 0
 thr = 0.1
-lambda_0 = 2
-mu_0 = 1.5
+lambda_0 = 0.25
+mu_0 = 0.15
+n_sims = 100
+sinr_threshold = 1
 
 
-x_c, y_c = cp.Gen_Circle(r, x_0, y_0)
-paths, robots = cp.Cox_Point_Process(r, x_0, y_0, lambda_0, mu_0)   
+x_c, y_c = cp.gen_circle(r, x_0, y_0)
+paths, robots = cp.cox_point_process(r, x_0, y_0, lambda_0, mu_0)   
 
    
 path_gdf = gpd.GeoDataFrame(geometry = paths) 
@@ -85,57 +87,51 @@ for i, path in path_gdf.iterrows():
         phys_nwk.add_edge(path_strt_name, path_end_name, colour = 'lightgray')
 
 
-       
-
 for robot in robots:
-    robot.Update()
+    robot.update()
     phys_nwk.add_node(robot.name, pos = (robot.x, robot.y), color = robot.col, type = robot.state)
     comm_nwk.add_node(robot.name, pos = (robot.x, robot.y), color = robot.col, type = robot.state)
-
-
-links = []
-for i, path in path_gdf.iterrows():
     
-    for tx in filter(lambda robot: robot.state == 'Tx' and robot.path_n == i, robots):
-            d_min = float('inf')
-            opt_rx = None
+
+coverage_probs = []
+N = Sinr.calc_noise_power(robots[0].B, T)
+for tx_tgt in filter(lambda robot: robot.state == 'Tx', robots):
+    for rx_tgt in filter(lambda robot: robot.state == 'Rx', robots):
+        count = 0
+        for i in range(n_sims):
             
-            for rx in filter(lambda robot: robot.state == 'Rx' and robot.path_n == i, robots):
-                d = np.sqrt((tx.x - rx.x) ** 2 + (tx.y - rx.y) ** 2)
-                if d > 0 and d < d_min:
-                    d_min = d
-                    opt_rx = rx
-                    
-            if opt_rx is not None:       
-                tx.active = 1
-                opt_rx.active = 1
-                link = [tx, opt_rx]
-                links.append(link)
-                comm_nwk.add_edge(link[0].name, link[1].name, color = 'green', type = 'link')
-    
-
-sinr_vals = []
-N = Sinr.Calc_N(robots[0].B, T)
-for link in links:
-    link_F = Sinr.Gen_F('F', 0, 1)
-    link_d = np.sqrt((link[0].x - link[1].x) ** 2 + (link[0].y - link[1].y) ** 2)
-    link_L = Sinr.Calc_L(link[0].f, link_d, 2)
-    link_P_r = Sinr.Calc_P_r(link_F, link[0].P_t, link[0].G, link[1].G, link_L)  
-    
-    interference_P_r = []
-    for tx in filter(lambda robot: robot.state == 'Tx' and robot.active == 1 and robot.name != link[0].name, robots):
-        tx_F = Sinr.Gen_F('F', 0, 1) 
-        tx_d = np.sqrt((tx.x - link[1].x) ** 2 + (tx.y - link[1].y) ** 2)
-        tx_L = Sinr.Calc_L(tx.f, tx_d, 2)
-        tx_P_r = Sinr.Calc_P_r(tx_F, tx.P_t, tx.G, link[1].G, tx_L)
-        interference_P_r.append(tx_P_r)
-    
-    link_sinr = Sinr.Calc_SINR(link_P_r, interference_P_r, N)
-    sinr_vals.append([link[0].name, link[1].name, link_sinr])
-
-
-for sinr_val in sinr_vals:
-    print(sinr_val,'\n')          
+            if tx_tgt.path_n == rx_tgt.path_n:
+                tgt_coeff = 2
+            else:
+                tgt_coeff = 3
+            d_tx_tgt = np.sqrt((tx_tgt.x - rx_tgt.x) ** 2 + (tx_tgt.y - rx_tgt.y) ** 2)
+            L_tx_tgt = Sinr.calc_path_loss(tx_tgt.f, d_tx_tgt, tgt_coeff)
+            F_tx_tgt = Sinr.gen_fading_var('F', 0, 1)
+            P_rx_tgt = Sinr.calc_rx_power(F_tx_tgt, tx_tgt.P_t, tx_tgt.G, rx_tgt.G, L_tx_tgt)  
+            
+            P_rx_intf = []
+            for tx_intf in filter(lambda robot: robot.state == 'Tx' and robot.name != tx_tgt.name, robots):
+                if tx_intf.path_n == rx_tgt.path_n:
+                    intf_coeff = 2
+                else:
+                    intf_coeff = 3
+                d_tx_intf = np.sqrt((tx_intf.x - rx_tgt.x) ** 2 + (tx_intf.y - rx_tgt.y) ** 2)
+                L_tx_intf = Sinr.calc_path_loss(tx_intf.f, d_tx_intf, intf_coeff)
+                F_tx_intf = Sinr.gen_fading_var('F', 0, 1) 
+                P_rx_intf.append(Sinr.calc_rx_power(F_tx_intf, tx_intf.P_t, tx_intf.G, rx_tgt.G, L_tx_intf))
+            sinr = Sinr.calc_sinr(P_rx_tgt, P_rx_intf, N)
+            if sinr > sinr_threshold:
+                count += 1
+        coverage_prob = count / n_sims
+        if coverage_prob > 0.1:
+            coverage_probs.append(count / n_sims)
+            print(tx_tgt.name, rx_tgt.name, count / n_sims)
+            if coverage_prob > 0.5:
+                link_col = 'green'
+            else:
+                link_col = 'orange'
+            comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = link_col)
+            phys_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = link_col)
 
            
 fig = plt.figure(figsize = (60, 60))
@@ -153,6 +149,6 @@ comm_ax.plot(x_0 + x_c, y_0 + y_c, color = 'black')
 comm_node_pos = nx.get_node_attributes(comm_nwk, 'pos')
 comm_node_cols = nx.get_node_attributes(comm_nwk, 'color').values()
 comm_edge_cols = nx.get_edge_attributes(comm_nwk, 'color').values()
-nx.draw(comm_nwk, pos = comm_node_pos, with_labels = True, ax = comm_ax, node_color = comm_node_cols, node_size = 20, edge_color = comm_edge_cols, width = 2, arrows = True, arrowstyle='->')
+nx.draw(comm_nwk, pos = comm_node_pos, with_labels = False, ax = comm_ax, node_color = comm_node_cols, node_size = 20, edge_color = comm_edge_cols, width = 2, arrows = True, arrowstyle='->')
 comm_ax.axis('equal')
 plt.show()

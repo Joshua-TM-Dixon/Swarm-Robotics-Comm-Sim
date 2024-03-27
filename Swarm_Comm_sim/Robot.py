@@ -18,7 +18,7 @@ class Robot:
         self.y = y
 
     
-    def Get_Status(self):
+    def get_status(self):
         return {
             'Robot name' : self.name,
             'Bandwidth' : self.B,
@@ -31,8 +31,8 @@ class Robot:
             'y' : self.y
         }
 
-       
-    def Update(self):
+
+    def update(self):
         state = np.random.choice([0,1])
         if state == 0:
             self.state = 'Tx'
