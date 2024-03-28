@@ -3,10 +3,10 @@ import plotly.graph_objects as go
 
 
 class Robot:
-    def __init__(self, path_n, robot_n, B, f, P_t, G, x, y):
-        self.path_n = path_n
+    def __init__(self, robot_n, B, f, P_t, G):
+        self.path_n = 0
         self.robot_n = robot_n
-        self.name = 'n(' + str(path_n) + str(robot_n) + ')'
+        self.name = 'R ' + str(robot_n)
         self.B = B
         self.f = f
         self.P_t = P_t
@@ -14,8 +14,8 @@ class Robot:
         self.active = 0
         self.state = 'n'
         self.col = 'black'
-        self.x = x
-        self.y = y
+        self.x = 0
+        self.y = 0
 
     
     def get_status(self):
@@ -32,7 +32,7 @@ class Robot:
         }
 
 
-    def update(self):
+    def update(self, path_n, x, y):
         state = np.random.choice([0,1])
         if state == 0:
             self.state = 'Tx'
@@ -40,5 +40,7 @@ class Robot:
         else:
             self.state = 'Rx'
             self.col = 'blue'
-        self.name = str(self.state) + '(' + str(self.path_n) + '.' + str(self.robot_n) + ')'
+        self.x = x
+        self.y = y
+        self.path_n = path_n
         

@@ -40,28 +40,17 @@ def create_intersection_gdf(path_gdf):
     return intersection_gdf
 
 
-def check_on_path(start, end, point):
-    cross_product = (end[0] - start[0]) * (point[1] - start[1]) - (point[0] - start[0]) * (end[1] - start[1])
-    dot_product = (end[0] - start[0]) * (point[0] - start[0]) + (end[1] - start[1]) * (point[1] - start[1])
-    sqr_length = (end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2
-    
-    if abs(cross_product) > 0.01 or dot_product < 0 or dot_product > sqr_length:
-        return False
-    else:
-        return True
-
-
-def check_for_nodes(graph, path_n, node_gdf, prev_name):
+def insert_nodes(graph, path_n, path_col, node_gdf, node_col, prev_node_name):
     for i, node in node_gdf.iterrows():
         if node['path_n'] == path_n and graph.has_node(node['name']) == False:
-            graph.add_node(node['name'], pos = [node['geometry'].x, node['geometry'].y], color = 'dimgray', type = 'node')
-            graph.add_edge(node['name'], prev_name, color = 'lightgray')
+            graph.add_node(node['name'], pos = [node['geometry'].x, node['geometry'].y], color = node_col, type = 'node')
+            graph.add_edge(node['name'], prev_node_name, color = path_col)
             prev_name = node['name']
     
-    return prev_name
+    return prev_node_name
 
 
-def populate_graph(graph, path_gdf, intersection_gdf, node_gdf):
+def populate_graph(graph, boarder_col, path_gdf, path_col, intersection_gdf, intersection_col, node_gdf, node_col):
     for i, path in path_gdf.iterrows():
         path_x, path_y = path['geometry'].xy
         mins = np.argmin(path_x)
@@ -71,18 +60,18 @@ def populate_graph(graph, path_gdf, intersection_gdf, node_gdf):
         path_end_y = path_y[1 - mins]
         path_intrs = intersection_gdf.loc[(intersection_gdf['path_n'] == path['path_n']) | (intersection_gdf['path_n2'] == path['path_n'])]
         path_intrs = path_intrs.iloc[path_intrs.geometry.x.argsort().values]
-        graph.add_node(path['start_name'], pos = (path_strt_x, path_strt_y), color = 'black', type = 'path')
-        graph.add_node(path['end_name'], pos = (path_end_x, path_end_y), color = 'black', type = 'path')
+        graph.add_node(path['start_name'], pos = (path_strt_x, path_strt_y), color = boarder_col, type = 'path')
+        graph.add_node(path['end_name'], pos = (path_end_x, path_end_y), color = boarder_col, type = 'path')
         
         prev_node_name = path['start_name']
         if path_intrs.shape[0] == 0:
-            prev_node_name = check_for_nodes(graph, path['path_n'], node_gdf, prev_node_name)
-            graph.add_edge(prev_node_name, path['end_name'], colour = 'lightgray')
+            prev_node_name = insert_nodes(graph, path['path_n'], path_col, node_gdf, node_col, prev_node_name)
+            graph.add_edge(prev_node_name, path['end_name'], colour = path_col)
         else: 
             for j, intr in path_intrs.iterrows():
-                graph.add_node(intr['name'], pos = (intr['geometry'].x, intr['geometry'].y), color = 'gray', type = 'intersection')
-                prev_node_name = check_for_nodes(graph, path['path_n'], node_gdf, prev_node_name)
-                graph.add_edge(prev_node_name, intr['name'], color = 'lightgray')
+                graph.add_node(intr['name'], pos = (intr['geometry'].x, intr['geometry'].y), color = intersection_col, type = 'intersection')
+                prev_node_name = insert_nodes(graph, path['path_n'], path_col, node_gdf, node_col, prev_node_name)
+                graph.add_edge(prev_node_name, intr['name'], color = path_col)
                 prev_node_name = intr['name']
-            prev_node_name = check_for_nodes(graph, path['path_n'], node_gdf, prev_node_name)
-            graph.add_edge(prev_node_name, path['end_name'], color = 'lightgray')
+            prev_node_name = insert_nodes(graph, path['path_n'], path_col, node_gdf, node_col, prev_node_name)
+            graph.add_edge(prev_node_name, path['end_name'], color = path_col)

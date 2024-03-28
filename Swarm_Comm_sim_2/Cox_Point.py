@@ -39,22 +39,28 @@ def calc_point_pos(x_0, y_0, p, q, theta):
 
 
 # Performs Cox point process - generates random lines and popl
-def cox_point_process(r, x_0, y_0, lambda_0, mu_0):
+def cox_point_process(r, x_0, y_0, lambda_0, mu_0, n_points_min):
     lines = []
     points = []
-    n_lines = np.random.poisson(2 * np.pi * r * lambda_0)
-    for i in range(n_lines):
-        p, q, theta = gen_line_par(r)
-        line = calc_line_pos(x_0, y_0, p, q, theta)
-        lines.append(line)
-        
-        line_points = []
-        n_points = np.random.poisson(2 * q * mu_0)
-        for j in range(n_points):
-            point = calc_point_pos(x_0, y_0, p, q, theta)
-            line_points.append(point)
-        
-        line_points.sort(key = lambda point: point.x)
-        points.append(line_points)
+    n_itterations = 0
+    while len(points) < n_points_min:
+        n_lines = np.random.poisson(2 * np.pi * r * lambda_0)
+        for i in range(n_lines):
+            p, q, theta = gen_line_par(r)
+            line = calc_line_pos(x_0, y_0, p, q, theta)
+            lines.append(line)
+            
+            line_points = []
+            n_points = np.random.poisson(2 * q * mu_0)
+            for j in range(n_points):
+                point = calc_point_pos(x_0, y_0, p, q, theta)
+                line_points.append(point)
+            
+            line_points.sort(key = lambda point: point.x)
+            points.append(line_points)
+        n_itterations += 1
+        if n_itterations == 20:
+            print('Error: n_points_min too high for given mu and lambda')
+            break
             
     return lines, points

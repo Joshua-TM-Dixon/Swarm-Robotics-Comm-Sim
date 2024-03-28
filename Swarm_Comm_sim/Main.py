@@ -99,7 +99,6 @@ for tx_tgt in filter(lambda robot: robot.state == 'Tx', robots):
     for rx_tgt in filter(lambda robot: robot.state == 'Rx', robots):
         count = 0
         for i in range(n_sims):
-            
             if tx_tgt.path_n == rx_tgt.path_n:
                 tgt_coeff = 2
             else:
@@ -119,6 +118,7 @@ for tx_tgt in filter(lambda robot: robot.state == 'Tx', robots):
                 L_tx_intf = Sinr.calc_path_loss(tx_intf.f, d_tx_intf, intf_coeff)
                 F_tx_intf = Sinr.gen_fading_var('F', 0, 1) 
                 P_rx_intf.append(Sinr.calc_rx_power(F_tx_intf, tx_intf.P_t, tx_intf.G, rx_tgt.G, L_tx_intf))
+            
             sinr = Sinr.calc_sinr(P_rx_tgt, P_rx_intf, N)
             if sinr > sinr_threshold:
                 count += 1
