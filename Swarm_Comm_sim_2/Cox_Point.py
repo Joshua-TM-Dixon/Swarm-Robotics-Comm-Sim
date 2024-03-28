@@ -1,6 +1,6 @@
 # Libraries
 import numpy as np
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
 import Robot as rb
 
 # Functions
@@ -26,7 +26,8 @@ def calc_line_pos(x_0, y_0, p, q, theta):
     y_1 = y_0 + p * np.sin(theta) - q *np.cos(theta)
     x_2 = x_0 + p * np.cos(theta) - q *np.sin(theta)
     y_2 = y_0 + p * np.sin(theta) + q *np.cos(theta)
-    return LineString([(x_1, y_1), (x_2, y_2)])
+    points = sorted([(x_1, y_1), (x_2, y_2)], key = lambda point: point[0])
+    return LineString(points)
 
 
 # Calculates the positions for the Poisson point process
@@ -34,7 +35,7 @@ def calc_point_pos(x_0, y_0, p, q, theta):
         u = np.random.uniform(-1, 1)
         x = x_0 + p * np.cos(theta) + u * q * np.sin(theta)
         y = y_0 + p * np.sin(theta) - u * q * np.cos(theta)
-        return x, y
+        return Point(x, y)
 
 
 # Performs Cox point process - generates random lines and popl
@@ -47,10 +48,13 @@ def cox_point_process(r, x_0, y_0, lambda_0, mu_0):
         line = calc_line_pos(x_0, y_0, p, q, theta)
         lines.append(line)
         
-        n_nodes = np.random.poisson(2 * q * mu_0)
-        for j in range(n_nodes):
-            point_x, point_y = calc_point_pos(x_0, y_0, p, q, theta)
-            robot = rb.Robot(i, j, 10 ** 6, 2.4835 * 10 ** 9, 10 ** (-5), 10 ** (-1), point_x, point_y)
-            points.append(robot)
+        line_points = []
+        n_points = np.random.poisson(2 * q * mu_0)
+        for j in range(n_points):
+            point = calc_point_pos(x_0, y_0, p, q, theta)
+            line_points.append(point)
+        
+        line_points.sort(key = lambda point: point.x)
+        points.append(line_points)
             
     return lines, points
