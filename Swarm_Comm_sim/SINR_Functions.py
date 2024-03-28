@@ -13,7 +13,7 @@ def calc_noise_power(B, T):
 
 # Calculates path-loss
 def calc_path_loss(f, d, a):
-    return ((3 * 10 ** 8) / (4 * np.pi * f, d)) ** a
+    return ((3 * 10 ** 8) / (4 * np.pi * f * d)) ** a
 
 # Calculates power at the receiver
 def calc_rx_power(F, P_tx, G_tx, G_rx, L):

@@ -6,7 +6,7 @@ class Robot:
     def __init__(self, robot_n, B, f, P_t, G):
         self.path_n = 0
         self.robot_n = robot_n
-        self.name = 'R ' + str(robot_n)
+        self.name = 'R' + str(robot_n)
         self.B = B
         self.f = f
         self.P_t = P_t

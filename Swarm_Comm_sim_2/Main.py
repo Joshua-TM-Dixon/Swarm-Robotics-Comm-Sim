@@ -19,7 +19,7 @@ lambda_0 = 0.1
 mu_0 = 0.1
 n_sims = 100
 n_robots = 15
-sinr_threshold = 1
+sinr_threshold = 0.5
 
 
 x_c, y_c = cp.gen_circle(r, x_0, y_0)
@@ -42,7 +42,6 @@ unique_nodes = []
 while len(unique_nodes) < n_robots:
     rand_i = np.random.randint(0, len(node_gdf))
     random_node = node_gdf.iloc[rand_i]
-    print(random_node['name'])
     if random_node['name'] not in unique_nodes:
         robots[len(unique_nodes)].update(random_node['path_n'], random_node['geometry'].x, random_node['geometry'].y)
         unique_nodes.append(random_node['name']) 
@@ -51,7 +50,48 @@ for robot in robots:
     phys_nwk.add_node(robot.name, pos = (robot.x, robot.y), color = robot.col, type = robot.state)
     comm_nwk.add_node(robot.name, pos = (robot.x, robot.y), color = robot.col, type = robot.state)
 
-         
+
+coverage_probs = []
+N = Sinr.calc_noise_power(robots[0].B, T)
+for tx_tgt in filter(lambda robot: robot.state == 'Tx', robots):
+    for rx_tgt in filter(lambda robot: robot.state == 'Rx', robots):
+        count = 0
+        for i in range(n_sims):
+            if tx_tgt.path_n == rx_tgt.path_n:
+                tgt_coeff = 2
+            else:
+                tgt_coeff = 2
+            d_tx_tgt = np.sqrt((tx_tgt.x - rx_tgt.x) ** 2 + (tx_tgt.y - rx_tgt.y) ** 2)
+            L_tx_tgt = Sinr.calc_path_loss(tx_tgt.f, d_tx_tgt, tgt_coeff)
+            F_tx_tgt = Sinr.gen_fading_var('F', 0, 1)
+            P_rx_tgt = Sinr.calc_rx_power(F_tx_tgt, tx_tgt.P_t, tx_tgt.G, rx_tgt.G, L_tx_tgt)  
+            
+            P_rx_intf = []
+            for tx_intf in filter(lambda robot: robot.state == 'Tx' and robot.name != tx_tgt.name, robots):
+                if tx_intf.path_n == rx_tgt.path_n:
+                    intf_coeff = 2
+                else:
+                    intf_coeff = 2
+                d_tx_intf = np.sqrt((tx_intf.x - rx_tgt.x) ** 2 + (tx_intf.y - rx_tgt.y) ** 2)
+                L_tx_intf = Sinr.calc_path_loss(tx_intf.f, d_tx_intf, intf_coeff)
+                F_tx_intf = Sinr.gen_fading_var('F', 0, 1) 
+                P_rx_intf.append(Sinr.calc_rx_power(F_tx_intf, tx_intf.P_t, tx_intf.G, rx_tgt.G, L_tx_intf))
+            
+            sinr = Sinr.calc_sinr(P_rx_tgt, P_rx_intf, N)
+            if sinr > sinr_threshold:
+                count += 1
+        coverage_prob = count / n_sims
+        print(tx_tgt.name, rx_tgt.name, count / n_sims)
+        if coverage_prob > 0.1:
+            coverage_probs.append(count / n_sims)
+            if coverage_prob > 0.5:
+                link_col = 'green'
+            else:
+                link_col = 'orange'
+            comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = link_col)
+            phys_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = link_col)
+            
+                   
 fig = plt.figure(figsize = (60, 60))
 phys_ax = fig.add_subplot(121)
 phys_ax.plot(x_0 + x_c, y_0 + y_c, color = 'black')
