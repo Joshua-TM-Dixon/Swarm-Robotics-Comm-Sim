@@ -19,6 +19,7 @@ def calc_path_loss(f, d, a):
 
 # Calculates power at the receiver
 def calc_rx_power(F, P_tx, G_tx, G_rx, L):
+    
     return F * P_tx * G_tx * G_rx * L
 
 # Calculates the sinr between target transmitters and receivers
