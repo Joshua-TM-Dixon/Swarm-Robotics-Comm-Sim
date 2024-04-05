@@ -36,7 +36,7 @@ class Robot:
         state = np.random.choice([0,1])
         if state == 0:
             self.state = 'Tx'
-            self.col = 'red'
+            self.col = 'lightblue'
         else:
             self.state = 'Rx'
             self.col = 'blue'

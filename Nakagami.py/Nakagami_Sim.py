@@ -4,7 +4,7 @@ import plotly.subplots as subplots
 import plotly.graph_objects as go
 
 # Define parameters
-m_values = [0.5, 1, 2, 4, 8]
+m_values = [0.5, 1, 2, 4]
 omega_values = [1/3, 0.5, 2/3, 3/4, 1]
 
 # Create subplots

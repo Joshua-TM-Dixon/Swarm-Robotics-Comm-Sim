@@ -4,14 +4,6 @@ from shapely.geometry import LineString, Point
 import Robot as rb
 
 # Functions
-# Generates 200 points evenly distributed on a circle
-def gen_circle(r, x_0, y_0):
-    theta = np.linspace(0, 2 * np.pi, 200)
-    x = x_0 + r * np.cos(theta)
-    y = y_0 + r * np.sin(theta)
-    return x, y
-
-
 # Generates Poisson line parameters
 def gen_line_par(r):
     p = r * np.random.uniform(0, 1)
@@ -39,28 +31,28 @@ def calc_point_pos(x_0, y_0, p, q, theta):
 
 
 # Performs Cox point process - generates random lines and popl
-def cox_point_process(r, x_0, y_0, lambda_0, mu_0, n_points_min):
+def cox_point_process(r, x_0, y_0, lambda_0, mu_0):
     lines = []
     points = []
     n_itterations = 0
-    while len(points) < n_points_min:
-        n_lines = np.random.poisson(2 * np.pi * r * lambda_0)
-        for i in range(n_lines):
-            p, q, theta = gen_line_par(r)
-            line = calc_line_pos(x_0, y_0, p, q, theta)
-            lines.append(line)
-            
-            line_points = []
-            n_points = np.random.poisson(2 * q * mu_0)
-            for j in range(n_points):
-                point = calc_point_pos(x_0, y_0, p, q, theta)
-                line_points.append(point)
-            
-            line_points.sort(key = lambda point: point.x)
-            points.append(line_points)
-        n_itterations += 1
-        if n_itterations == 20:
-            print('Error: n_points_min too high for given mu and lambda')
-            break
+    #while len(points) < n_points_min:
+    n_lines = np.random.poisson(2 * np.pi * r * lambda_0)
+    for i in range(n_lines):
+        p, q, theta = gen_line_par(r)
+        line = calc_line_pos(x_0, y_0, p, q, theta)
+        lines.append(line)
+        
+        line_points = []
+        n_points = np.random.poisson(2 * q * mu_0)
+        for j in range(n_points):
+            point = calc_point_pos(x_0, y_0, p, q, theta)
+            line_points.append(point)
+        
+        line_points.sort(key = lambda point: point.x)
+        points.append(line_points)
+    n_itterations += 1
+        #if n_itterations == 20:
+            #print('Error: n_points_min too high for given mu and lambda')
+            #break
             
     return lines, points
