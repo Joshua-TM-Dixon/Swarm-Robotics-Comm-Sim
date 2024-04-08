@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import csv
 import Sinr_Functions as Sinr
 import Sim_functions as sim
 import Robot as rb
@@ -13,7 +14,7 @@ lambda_0 = 0.2
 mu_0 = 0.1
 
 n_sims = 100
-n_robots = 20
+n_robots = 30
 sinr_threshold = 1
 
 
@@ -38,15 +39,24 @@ for tx_tgt in filter(lambda robot: robot.state == 'Tx', robots):
             coverage_prob = sim.calc_coverage_prob(n_sims, robots, tx_tgt, rx_tgt, sinr_threshold, N)
             
             print(tx_tgt.name, tx_tgt.path_n, rx_tgt.name, rx_tgt.path_n, coverage_prob)
-            if coverage_prob > 0.9:
-                results.append({'Transmitter': tx_tgt.name, 'Receiver': rx_tgt.name, 'Coverage Probability': coverage_prob})
-                comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = 'green')
-            elif coverage_prob > 0.5:
-                comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = 'orange')
-            elif coverage_prob > 0.1:
-                comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = 'red')
-                
-                   
+            if coverage_prob > 0.1:
+                results.append([tx_tgt.name, rx_tgt.name, coverage_prob])
+                if coverage_prob > 0.9:
+                    comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = 'green')
+                elif coverage_prob > 0.5:
+                    comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = 'orange')
+                else:
+                    comm_nwk.add_edge(tx_tgt.name, rx_tgt.name, color = 'red')
+
+
+with open('Simulation Results.csv', mode = 'w', newline = '') as results_csv:
+    field_names = ['Tx', 'Rx', 'Coverage Probability']
+    writer = csv.DictWriter(results_csv, fieldnames = field_names)
+    writer.writeheader()
+    for result in results:
+        writer.writerow({'Tx': result[0], 'Rx': result[1], 'Coverage Probability': result[2]})              
+
+              
 fig = plt.figure(figsize = (60, 60))
 phys_ax = fig.add_subplot(121)
 phys_ax.plot(x_0 + x_c, y_0 + y_c, color = 'black')
