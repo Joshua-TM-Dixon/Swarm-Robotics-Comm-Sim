@@ -66,14 +66,14 @@ def determine_sinr_par(robots,tx, rx, a_common_path, a_uncommon_path, m_los, m_n
 def calc_coverage_prob(n_sims, robots, tx_tgt, rx_tgt, sinr_threshold, N):
     count = 0
     for i in range(n_sims):
-        a_tgt, m_tgt = determine_sinr_par(robots, tx_tgt, rx_tgt, 2, 1000, 4, 1)
+        a_tgt, m_tgt = determine_sinr_par(robots, tx_tgt, rx_tgt, 2, 10, 4, 1)
         d_tgt = np.sqrt((tx_tgt.x - rx_tgt.x)** 2 + (tx_tgt.y - rx_tgt.y)** 2)
         L_tgt = Sinr.calc_path_loss(tx_tgt.f, d_tgt, 0.01, a_tgt)
         F_tgt = Sinr.gen_fading_var(m_tgt, 0.75)
         P_rx_tgt = Sinr.calc_rx_power(F_tgt, tx_tgt.P_t, tx_tgt.G, rx_tgt.G, L_tgt) 
         P_rx_intf = []
         for tx_intf in filter(lambda robot: robot.state == 'Tx' and robot.name != tx_tgt.name, robots):
-            a_intf, m_intf = determine_sinr_par(robots, tx_intf, rx_tgt, 2, 1000, 4, 1)
+            a_intf, m_intf = determine_sinr_par(robots, tx_intf, rx_tgt, 2, 10, 4, 1)
             d_intf = np.sqrt((tx_intf.x - rx_tgt.x)** 2 + (tx_intf.y - rx_tgt.y)** 2)
             L_intf = Sinr.calc_path_loss(tx_intf.f, d_intf, 0.01, a_intf)
             F_intf = Sinr.gen_fading_var(m_intf, 0.75)

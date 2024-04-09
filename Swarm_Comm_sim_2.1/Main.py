@@ -14,6 +14,11 @@ lambda_0 = 0.2
 mu_0 = 0.1
 n_sims = 100
 n_robots = 30
+m_los = 4
+m_nlos = 1
+omega = 0.75
+d_0 = 0.01 * r
+a = 2
 sinr_threshold = 1
 
 
@@ -35,7 +40,7 @@ results = []
 N = Sinr.calc_noise_power(robots[0].B, T)
 for tx_tgt in filter(lambda robot: robot.state == 'Tx', robots):
     for rx_tgt in filter(lambda robot: robot.state == 'Rx', robots):
-            coverage_prob = sim.calc_coverage_prob(n_sims, robots, tx_tgt, rx_tgt, sinr_threshold, N)
+            coverage_prob = sim.calc_coverage_prob(n_sims, robots, tx_tgt, rx_tgt, sinr_threshold, N, m_los, m_nlos, omega, d_0, a)
             if coverage_prob > 0.1:
                 results.append([tx_tgt.name, rx_tgt.name, coverage_prob])
                 if coverage_prob > 0.9:
