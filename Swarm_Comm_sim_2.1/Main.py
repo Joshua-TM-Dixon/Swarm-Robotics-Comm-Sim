@@ -29,7 +29,7 @@ comm_nwk = nx.Graph()
 
 robots = []
 for i in range(n_robots):
-    robots.append(rb.Robot(i, 10 ** 6, 2.4835 * 10 ** 9, 10 ** (-5), 10 ** (-1)))    
+    robots.append(rb.Robot(i, 10 ** 6, 2.4835 * 10 ** 9, 10 ** (-5), 10 ** (0.5)))    
 sim.rand_movement(phys_nwk, robots)
 for robot in robots:
     phys_nwk.add_node(robot.name, pos = (robot.x, robot.y), color = robot.col, type = robot.state, path_n = robot.path_n)

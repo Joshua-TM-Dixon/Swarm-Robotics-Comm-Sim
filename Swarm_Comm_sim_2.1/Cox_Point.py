@@ -1,7 +1,6 @@
 # Libraries
 import numpy as np
 from shapely.geometry import LineString, Point
-import Robot as rb
 
 # Functions
 # Generates Poisson line parameters
