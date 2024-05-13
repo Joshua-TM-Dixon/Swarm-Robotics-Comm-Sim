@@ -4,9 +4,8 @@ from shapely.geometry import Point
 import Sim_functions as sim
 
 r = 10
-T = 300
 centre_pos = Point(0, 0)
-lambda_0 = 0.2
+lambda_0 = 0.3
 mu_0 = 0.1
 
 n_sims = 100
@@ -53,6 +52,6 @@ comm_ax = fig.add_subplot(122)
 comm_node_pos = nx.get_node_attributes(comm_nwk, 'pos')
 comm_node_cols = nx.get_node_attributes(comm_nwk, 'color').values()
 comm_edge_cols = nx.get_edge_attributes(comm_nwk, 'color').values()
-nx.draw(comm_nwk, pos = comm_node_pos, with_labels = True, ax = comm_ax, node_color = comm_node_cols, node_size = 20, edge_color = comm_edge_cols, width = 2, arrows = True, arrowstyle='->')
+nx.draw(comm_nwk, pos = comm_node_pos, with_labels = False, ax = comm_ax, node_color = comm_node_cols, node_size = 20, edge_color = comm_edge_cols, width = 2, arrows = True, arrowstyle='->')
 comm_ax.axis('equal')
 plt.show()

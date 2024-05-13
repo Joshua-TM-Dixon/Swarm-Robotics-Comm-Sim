@@ -25,17 +25,17 @@ for node_id in node_ids:
         comm_nwk.add_node(node_id, pos = node['pos'], color = node['colour'])
 
 results = []
-for node_tx in occupied_nodes:
-    for node_rx in filter(lambda node_id: node_id != node_tx, occupied_nodes):
-            coverage_prob = sim.calc_coverage_prob(n_sims, sinr_threshold, env.graph, node_tx, node_rx, occupied_nodes)
-            if coverage_prob > 0.1:
-                results.append([node_tx, node_rx, coverage_prob])
-                if coverage_prob > 0.9:
-                    comm_nwk.add_edge(node_tx, node_rx, color = 'green')
-                elif coverage_prob > 0.5:
-                    comm_nwk.add_edge(node_tx, node_rx, color = 'orange')
-                else:
-                    comm_nwk.add_edge(node_tx, node_rx, color = 'red')   
+node_tx = occupied_nodes[0]
+for node_rx in filter(lambda node_id: node_id != node_tx, occupied_nodes):
+        coverage_prob = sim.calc_coverage_prob(n_sims, sinr_threshold, env.graph, node_tx, node_rx, occupied_nodes)
+        if coverage_prob > 0.1:
+            results.append([node_tx, node_rx, coverage_prob])
+            if coverage_prob > 0.9:
+                comm_nwk.add_edge(node_tx, node_rx, color = 'green')
+            elif coverage_prob > 0.5:
+                comm_nwk.add_edge(node_tx, node_rx, color = 'orange')
+            else:
+                comm_nwk.add_edge(node_tx, node_rx, color = 'red')   
 
 sim.store_results('Simulation_Results.csv', results)           
            
