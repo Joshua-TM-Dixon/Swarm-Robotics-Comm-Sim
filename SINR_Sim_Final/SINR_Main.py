@@ -1,47 +1,62 @@
-# Libraries
 import numpy as np
 import plotly.graph_objects as go
 import Sinr_Functions as Sinr
 
-# Global variables
-coverage_Prob = []
-
-B = 10 ** 6  # Bandwidth in Hertz (Hz)     
-f = 2.4835 * 10 ** 9  # Frequency in Hertz (Hz)   
-P_tx = 10 ** (-5)  # Transmit power in Watts (W)      
-G = 10 ** (-1)  # Antenna gain        
+# Global Variables
+B = 10 ** 6   
+f = 2.4835 * 10 ** 9   
+P_tx = 10 ** (-5)    
+G = 10 ** (-1)    
 sinr_threshold = 1                 
 
-r = 100  # Environment radius Meters (m)                               
-T_range = np.linspace(250, 350, 5)  # Environment temperature in Kelvin (K)
+r = 100                            
+T_range = np.linspace(250, 350, 5)
 n_sims = 5000
 m = np.random.choice([1, 4])
 omega = 0.75
 d_0 = 0.01 * r
 a_range = np.linspace(2, 2, 1)
-n_tx_intf_range = range(2, 3, 1)  # Range in the number of interference transmitters
-d_tx_tgt_range = np.linspace(0.1, 60, 30)  # Range of target transmitter distances
+n_tx_intf_range = range(2, 3, 1)
+d_tx_tgt_range = np.linspace(0.1, 60, 30)
 
 
-# Provides polar coordinates of a point in a circle
 def gen_rand_point_on_circle(r_circle):
+    """
+    Generate a random point on a circle.
+
+    Parameters:
+        r_circle (float): Radius of the circle.
+
+    Returns:
+        tuple: Distance from (0,0) and angle from the x-axis of the point.
+    """
     theta = 2 * np.pi * np.random.uniform(0, 1)
     d = r_circle * np.sqrt(np.random.uniform(0, 1))
     return d, theta
 
-
-# Plots generic figure containing 1 or more scatter graphs
 def plot_data(t_name, t_data, t_units, x_axis_name, x_data, x_units, y_axis_name, y_data, y_units):
+    """
+    Plot data using Plotly.
+
+    Parameters:
+        t_name (str): Name of the variable for which data is plotted.
+        t_data (list): List of values for the variable.
+        t_units (str): Units of the variable.
+        x_axis_name (str): Name of the x-axis.
+        x_data (list): List of values for the x-axis.
+        x_units (str): Units of the x-axis.
+        y_axis_name (str): Name of the y-axis.
+        y_data (list): List of values for the y-axis.
+        y_units (str): Units of the y-axis.
+    """
     fig = go.Figure()
     
-    # Add scatter graphs
     for i in range(len(t_data)):
         fig.add_trace(go.Scatter(x = list(x_data),
                                  y = [y_data[j + i * len(x_data)] for j in range(len(x_data))], 
                                  mode = 'lines+markers',
                                  name = f'{t_name} = {t_data[i]} {t_units}'))
-    
-    # Modify graph appearance    
+       
     fig.update_layout(
         title = dict(
             text = f'Graph of {y_axis_name} Against {x_axis_name}',
@@ -66,14 +81,16 @@ def plot_data(t_name, t_data, t_units, x_axis_name, x_data, x_units, y_axis_name
         height = 750)
     
     fig.show()
-  
+
+# Simulation
+coverage_Prob = []
 for T in T_range:  
-    # Run Monte-Carlo simulation using communication parameters
     N = Sinr.calc_noise_power(B, T)
     for n_tx_intf in n_tx_intf_range:
         for d_tx_tgt in d_tx_tgt_range:
             for a in a_range:
                 count = 0
+                # Monte-Carlo Process
                 for i in range (n_sims):
                     L_tx_tgt = Sinr.calc_path_loss(f, d_tx_tgt, d_0, a)
                     F_tx_tgt = Sinr.gen_fading_var(m, omega)
