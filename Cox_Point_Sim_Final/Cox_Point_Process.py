@@ -14,12 +14,6 @@ class Cox_Point:
     def __init__(self, r, centre_pos, lambda_0, mu_0):
         """
         Initialise Cox_Point object.
-
-        Parameters:
-            r (float): Radius of the circular region.
-            centre_pos (Point): Centre position of the circular region.
-            lambda_0 (float): Intensity of lines in the process.
-            mu_0 (float): Intensity of points on lines in the process.
         """
         self.r = r
         self.centre_pos = centre_pos

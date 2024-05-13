@@ -1,5 +1,3 @@
-
-# Libraries
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,9 +25,7 @@ plt.figure(figsize = (60, 60))
 phys_point_pos = nx.get_node_attributes(env.graph, 'pos')
 phys_point_cols = nx.get_node_attributes(env.graph, 'color').values()
 phys_edge_cols = nx.get_edge_attributes(env.graph, 'color').values()
-# Draw Graph
 nx.draw(env.graph, pos = phys_point_pos, with_labels = False, node_color = phys_point_cols, node_size = 20, edge_color = phys_edge_cols, width = 2, arrows = False)
-# Add labels
 nodes_to_label = [n for n, attr in env.graph.nodes(data = True) if attr.get("type") in ['Rx', 'Tx']]
 nx.draw_networkx_labels(env.graph, pos = phys_point_pos, verticalalignment = 'top',horizontalalignment = "right", labels = {n: n for n in nodes_to_label})
 plt.show()
